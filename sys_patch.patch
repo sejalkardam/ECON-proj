@@ -1,0 +1,124 @@
+--- linux-5.15.2/kernel/sys.c	2021-12-27 19:55:57.190712348 +0000
++++ stock/linux-5.15.2/kernel/sys.c	2021-11-12 14:05:52.000000000 +0000
+@@ -200,121 +200,6 @@ out:
+ 	return error;
+ }
+ 
+-/*We add our own personally defined system calls here*/
+-
+-/*These are our semaphores*/
+-
+-struct semaphore lock;
+-struct semaphore if_full;
+-struct semaphore if_empty;
+-
+-/*This is our code for queue*/
+-
+-struct Queue
+-{
+-    int key;
+-    struct Queue *nxt;
+-};
+-
+-struct Queue *head;
+-struct Queue *tail;
+-
+-
+-void insertion(int value){
+-	struct Queue *pointer;
+-
+-	down(&lock);
+-	down(&if_empty);
+-
+-    pointer=(struct Queue *)kmalloc(sizeof(struct Queue),GFP_KERNEL);
+-    /*if(pointer==NULL){
+-        return NULL;
+-    }
+-    else{*/
+-        pointer->key=value;
+-
+-        if(head==NULL){
+-            head=pointer;
+-            tail=pointer;
+-            head->nxt=NULL;
+-            tail->nxt=NULL;
+-        }
+-
+-        else{
+-            tail->nxt=pointer;
+-            tail=pointer;
+-            tail->nxt=NULL;
+-        }
+-
+-//    }
+-
+-	up(&if_full);
+-	up(&lock);
+-
+-}
+-
+-int deletion(void){
+-	int data;
+-	struct Queue *pointer;
+-
+-	down(&lock);
+-	down(&if_full);
+-
+-    
+-
+-    /*if(head==NULL){
+-        return NULL;
+-    }
+-    else{*/
+-        pointer=head;
+-		data = pointer->key;
+-        head=head->nxt;
+-        kfree(pointer);
+-    //}
+-
+-	up(&if_empty);
+-	up(&lock);
+-	return data;
+-}
+-
+-int first_time = 1; //this is a boolean. it checks if this is the first time the system calls are used
+-
+-SYSCALL_DEFINE1(writer, int, key){
+-	//System call writer(key)
+-
+-	if (first_time){
+-		sema_init(&lock, 1);
+-		sema_init(&if_full, 0);
+-		sema_init(&if_empty, 4);
+-
+-		first_time = 0;
+-	}
+-
+-	insertion(key);
+-
+-	return 0;
+-
+-}
+-
+-SYSCALL_DEFINE0(reader){
+-	//System call reader()
+-	int data;
+-
+-	if (first_time){
+-		sema_init(&lock, 1);
+-		sema_init(&if_full, 0);
+-		sema_init(&if_empty, 4);
+-
+-		first_time = 0;
+-	}
+-
+-	data = deletion();
+-
+-	return data;
+-
+-}
+-
+-
+ SYSCALL_DEFINE3(setpriority, int, which, int, who, int, niceval)
+ {
+ 	struct task_struct *g, *p;
